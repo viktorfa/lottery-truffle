@@ -108,9 +108,38 @@ contract LotteryMatch {
      */
     function getWinner() public view returns (address winner) {
         // FOR TESTING require(tPlay < block.number);
+
+        // NOTE: Be careful of an adversary calling this function
+        // before a winner should be determined.
+
+        // Check if any player is missing
+        if (alice != address(0) && bob == address(0)) {
+            return alice;
+        } else if (alice == address(0) && bob != address(0)) {
+            return bob;
+        } else if (alice == address(0) && bob == address(0)) {
+            return address(0);
+        }
         
-        // TODO Handle the cases with timeouts and lack of commitments/secrets.
+        // Check if parties have made commitments.
+        if (commitments[alice] != 0 && commitments[bob] == 0) {
+            return alice;
+        } else if (commitments[alice] == 0 && commitments[bob] != 0) {
+            return bob;
+        } else if (commitments[alice] == 0 && commitments[bob] == 0) {
+            return address(0);
+        }
+
+        // Check if parties have revealed.
+        if (secrets[alice] != 0 && secrets[bob] == 0) {
+            return alice;
+        } else if (secrets[alice] == 0 && secrets[bob] != 0) {
+            return bob;
+        } else if (secrets[alice] == 0 && secrets[bob] == 0) {
+            return address(0);
+        }
         
+        // Both parties have revealed, let's toss the coin.
         if (secrets[alice] ^ secrets[bob] % 2 == 0) {
             return alice;
         } else {

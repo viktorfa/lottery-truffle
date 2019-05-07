@@ -30,3 +30,18 @@ module.exports.getLotteryMatches = (N, tCommit, td) => {
 
   return contracts;
 };
+
+module.exports.generatePlayer = ({ secret, address }) => {
+  if (!secret) {
+    secret = web3.utils.randomHex(8);
+  }
+  const commitment = web3.utils.soliditySha3(address, {
+    type: 'uint',
+    value: secret,
+  });
+  return {
+    commitment,
+    secret,
+    address,
+  };
+};
