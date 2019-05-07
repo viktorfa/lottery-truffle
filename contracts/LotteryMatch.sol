@@ -22,38 +22,37 @@ contract LotteryMatch {
     bool isFirstLevel;  // There is a difference between first level matches and matches one must qualify for.
     uint256 index;  // Matches on the first level are indexed so that they map to specific players in the lottery;
     
-    uint256 t0;  // Block height after which making commitments is possible.
-    uint256 t1;  // Block height after which making reveals is possible. And commitments no longer possible.
-    uint256 t2;  // Block height after which deciding the winner is possible. And reveals no longer possible.
+    uint256 tCommit;  // Block height after which making commitments is possible.
+    uint256 tReveal;  // Block height after which making reveals is possible. And commitments no longer possible.
+    uint256 tPlay;  // Block height after which deciding the winner is possible. And reveals no longer possible.
     
     address owner;  // Owner of this contract.
 
     bool isInitialized;
     
-    
-    
-    constructor(uint256 _t0, uint256 _t1, uint256 _t2) public {
-        // FOR TESTING require(_t0 < _t1);
-        // FOR TESTING require(_t1 < _t2);
+
+    constructor(uint256 _tCommit, uint256 _tReveal, uint256 _tPlay) public {
+        // FOR TESTING require(_tCommit < _tReveal);
+        // FOR TESTING require(_tReveal < _tPlay);
         
-        t0 = _t0;
-        t1 = _t1;
-        t2 = _t2;
+        tCommit = _tCommit;
+        tReveal = _tReveal;
+        tPlay = _tPlay;
         
         owner = msg.sender;
-        isInitialized = false;
     }
     
     /**
      * Initialize the match as a first level match.
      */
     function initFirstLevelMatch(LotteryMaster _lottery, uint256 _index) public {
-        // TODO require(lottery == address(0));
+        require(isInitialized == false, "Match is already initialized.");
         require(msg.sender == owner, "Only owner can initialize match.");
         
         lottery = _lottery;
         index = _index;
         isFirstLevel = true;
+
         isInitialized = true;
     }
     
@@ -61,13 +60,12 @@ contract LotteryMatch {
      * Initialize the match as a match inside the tournament tree.
      */
     function initInternalMatch(LotteryMatch _left, LotteryMatch _right) public {
-        // TODO require(left == address(0));
-        // TODO require(right == address(0));
-        
+        require(isInitialized == false, "Match is already initialized.");
         require(msg.sender == owner, "Only owner can initialize match.");
         
         left = _left;
         right = _right;
+
         isInitialized = true;
     }
     
@@ -76,8 +74,8 @@ contract LotteryMatch {
      */
     function commit(bytes32 _c) public {
         require(isInitialized == true, "Match must be initialized.");
-        // FOR TESTING require(t0 < block.number);
-        // FOR TESTING require(t1 > block.number);
+        // FOR TESTING require(tCommit < block.number);
+        // FOR TESTING require(tReveal > block.number);
         
         if (isFirstLevel == true) {
             alice = lottery.getPlayer(index * 2);
@@ -96,8 +94,8 @@ contract LotteryMatch {
      * Have a player reveal the value previously commited to for the digital coin toss.
      */
     function reveal(uint256 _s) public {
-        // FOR TESTING require(t1 < block.number);
-        // FOR TESTING require(t2 > block.number);
+        // FOR TESTING require(tReveal < block.number);
+        // FOR TESTING require(tPlay > block.number);
         
         require(keccak256(abi.encodePacked(msg.sender, _s)) == commitments[msg.sender], "Secret not preimage of commitment.");
         
@@ -109,7 +107,7 @@ contract LotteryMatch {
      * Implicitly calculate the winner by performing the digital coin toss.
      */
     function getWinner() public view returns (address winner) {
-        // FOR TESTING require(t2 < block.number);
+        // FOR TESTING require(tPlay < block.number);
         
         // TODO Handle the cases with timeouts and lack of commitments/secrets.
         

@@ -8,7 +8,7 @@ const t0 = 100;
 const tFinal = 200;
 const td = 2;
 
-contract('LotteryMaster', async (accounts) => {
+contract('Lottery integration test', async (accounts) => {
   beforeEach(async () => {
     this.lottery = await LotteryMaster.new(N, price, t0, tFinal);
     this.matchesParams = getLotteryMatches(N, t0, td);

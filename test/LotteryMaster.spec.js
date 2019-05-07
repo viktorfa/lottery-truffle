@@ -13,8 +13,7 @@ contract('LotteryMaster', async (accounts) => {
     assert.isOk(this.lottery);
   });
 
-  // TODO Need to do the check of whether there is a final match in Solidity
-  it.skip('Should not be able to deposit when there is no final match', async () => {
+  it('Should not be able to deposit when there is no final match', async () => {
     try {
       await this.lottery.deposit({ value: price });
       assert.fail('Expected transaction to be invalid.');

@@ -7,6 +7,7 @@ import {LotteryMatch} from "./LotteryMatch.sol";
  * The lottery master contract which individual 1v1 matches reference.
  */
 contract LotteryMaster {
+    // TODO Need some way of checking whether enough players have joined by tStart
     
     address[] players;  // All players who have made a deposit.
     mapping(address => uint256) deposits;  // The value of deposits players have made.
@@ -18,21 +19,21 @@ contract LotteryMaster {
     
     uint256 nPlayers;  // Number of players currently joined.
     
-    uint256 t0;      // Start block height of the lottery.
+    uint256 tStart;      // Start block height of the lottery.
     uint256 tFinal;  // Block height when the lottery is over and withdrawals can be made.
     
     LotteryMatch finalMatch;  // Reference to the final match which decides the winner.
     
-    constructor(uint256 _N, uint256 _price, uint256 _t0, uint256 _tFinal) public {
-        require(_t0 < _tFinal, "Time limits invalid. Stop time is before start time.");
+    constructor(uint256 _N, uint256 _price, uint256 _tStart, uint256 _tFinal) public {
+        require(_tStart < _tFinal, "Time limits invalid. Stop time is before start time.");
         
         N = _N;
         price = _price;
-        t0 = _t0;
+        tStart = _tStart;
         tFinal = _tFinal;
 
         owner = msg.sender;
-        players = new address[](_N);
+        players = new address[](_N);  // Initialize the list of player as an array of fixed size.
     }
     
     /**
@@ -42,7 +43,7 @@ contract LotteryMaster {
      */
     function setFinalMatch(LotteryMatch _finalMatch) public {
         require(msg.sender == owner, "Only owner can set final match.");
-        // TODO require(finalMatch);  // Make sure finalMatch is immutable once set.
+        require(finalMatch == LotteryMatch(0), "Final match is already set.");  // Make sure finalMatch is immutable once set.
         finalMatch = _finalMatch;
     }
     
@@ -53,7 +54,7 @@ contract LotteryMaster {
      */
     function deposit() public payable {
         // FOR TESTING require(block.number < t0, "Too late to deposit now.");
-        // TODO require(finalMatch != address(0));
+        require(finalMatch != LotteryMatch(0), "Final match not set. Lottery not initialized yet.");
         require(msg.value == price, "Transaction value is not equal to ticket price.");
         require(nPlayers < N, "Lottery is full");
         // FOR TESTING require(deposits[msg.sender] == 0, "Player has already deposited to this lottery.");
@@ -69,14 +70,15 @@ contract LotteryMaster {
      * participants can withdraw their deposit.
      */
     function withdraw() public {
-        require(block.number > tFinal, "Lottery stop time is not reached.");
-        
         address lotteryWinner = finalMatch.getWinner();
-        if (lotteryWinner == address(0)) {  // Lottery has concluded without a winner.
-            msg.sender.transfer(deposits[msg.sender]);
-        } else {  // The winner can withdraw their prize.
-            require(msg.sender == finalMatch.getWinner(), "Player is not winner of lottery.");
+        if (lotteryWinner != address(0)) {
+            // The winner can withdraw their prize.
+            require(msg.sender == lotteryWinner, "Player is not winner of lottery.");
             msg.sender.transfer(address(this).balance);
+        } else {
+            // Lottery has concluded without a winner.
+            require(block.number > tFinal, "Lottery stop time is not reached.");
+            msg.sender.transfer(deposits[msg.sender]);
         }
     }
     
