@@ -1,4 +1,5 @@
 const { getLotteryMatches, generatePlayer } = require('../lib/helpers');
+const { MatchPhases } = require('../lib/enums');
 
 const LotteryMatch = artifacts.require('LotteryMatch');
 const LotteryMaster = artifacts.require('LotteryMaster');
@@ -10,12 +11,6 @@ const tFinal = 200;
 const td = 2;
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-
-const MatchPhases = {
-  COMMIT: 'COMMIT',
-  REVEAL: 'REVEAL',
-  PLAY: 'PLAY',
-};
 
 const generateFirstLevelMatch = async (
   player1,
