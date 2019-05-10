@@ -20,7 +20,7 @@ contract LotteryMatch {
     
     LotteryMaster public lottery;  // The master lottery contract.
     bool public isFirstLevel;  // There is a difference between first level matches and matches one must qualify for.
-    uint256 public index;  // Matches on the first level are indexed so that they map to specific players in the lottery;
+    uint256 public index;  // Matches on the first level are indexed so that they map to specific players in the lottery.
     
     uint256 public tCommit;  // Block height after which making commitments is possible.
     uint256 public tReveal;  // Block height after which making reveals is possible. And commitments no longer possible.
@@ -145,12 +145,5 @@ contract LotteryMatch {
         } else {
             return bob;
         }
-    }
-
-    function getLeft() public view returns (LotteryMatch _left) {
-        _left = left;
-    }
-    function getRight() public view returns (LotteryMatch _right) {
-        _right = right;
     }
 }

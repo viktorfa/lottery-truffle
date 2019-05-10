@@ -94,8 +94,8 @@ contract('Lottery integration test', async (accounts) => {
             from: players[playerIndex].address,
           });
         } else {
-          const left = await LotteryMatch.at(await match.getLeft());
-          const right = await LotteryMatch.at(await match.getRight());
+          const left = await LotteryMatch.at(await match.left());
+          const right = await LotteryMatch.at(await match.right());
           const leftWinner = playerMap[await left.getWinner()];
           const rightWinner = playerMap[await right.getWinner()];
           await match.commit(leftWinner.commitment, {
@@ -115,8 +115,8 @@ contract('Lottery integration test', async (accounts) => {
             from: players[playerIndex].address,
           });
         } else {
-          const left = await LotteryMatch.at(await match.getLeft());
-          const right = await LotteryMatch.at(await match.getRight());
+          const left = await LotteryMatch.at(await match.left());
+          const right = await LotteryMatch.at(await match.right());
           const leftWinner = playerMap[await left.getWinner()];
           const rightWinner = playerMap[await right.getWinner()];
           await match.reveal(leftWinner.secret, {

@@ -1,6 +1,6 @@
 const LotteryMaster = artifacts.require('LotteryMaster');
 
-const { LotteryContract } = require('../lib/contracts');
+const { LotteryContract, LotteryBuilder } = require('../lib/contracts');
 
 const N = 4;
 const L = Math.floor(Math.log2(N));
@@ -23,5 +23,21 @@ contract('LotteryContract', (accounts) => {
     await lotteryContract.init();
     const actual = await lotteryContract.getPlayers();
     assert.isOk(actual);
+  });
+  it('getAllMatches', async () => {
+    const lotteryBuilder = new LotteryBuilder(N, price, tStart, tFinal, td);
+    await lotteryBuilder.start();
+    const lotteryContract = new LotteryContract(lotteryBuilder.lottery.address);
+    await lotteryContract.init();
+
+    const matches = await lotteryContract.getAllMatches();
+    assert.isOk(matches);
+    assert.isArray(matches);
+    assert.equal(matches.length, Math.floor(Math.log2(N)));
+    const totalMatches = matches.reduce(
+      (acc, matches) => acc + matches.length,
+      0
+    );
+    assert.equal(totalMatches, N - 1, 'Number of matches not correct');
   });
 });
