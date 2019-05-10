@@ -23,6 +23,9 @@ contract LotteryMaster {
     uint256 public tFinal;  // Block height when the lottery is over and withdrawals can be made.
     
     LotteryMatch public finalMatch;  // Reference to the final match which decides the winner.
+
+    bool public isInitialized;  // Whether the lottery is ready to take deposits.
+    bool public isFull;  //  Whether the lottery is full and ready to play.
     
     constructor(uint256 _N, uint256 _price, uint256 _tStart, uint256 _tFinal) public {
         require(_tStart < _tFinal, "Time limits invalid. Stop time is before start time.");
@@ -45,6 +48,8 @@ contract LotteryMaster {
         require(msg.sender == owner, "Only owner can set final match.");
         require(finalMatch == LotteryMatch(0), "Final match is already set.");  // Make sure finalMatch is immutable once set.
         finalMatch = _finalMatch;
+
+        isInitialized = true;
     }
     
     
@@ -56,12 +61,16 @@ contract LotteryMaster {
         // FOR TESTING require(block.number < t0, "Too late to deposit now.");
         require(finalMatch != LotteryMatch(0), "Final match not set. Lottery not initialized yet.");
         require(msg.value == price, "Transaction value is not equal to ticket price.");
-        require(nPlayers < N, "Lottery is full");
+        require(isFull == false, "Lottery is full");
         // FOR TESTING require(deposits[msg.sender] == 0, "Player has already deposited to this lottery.");
         
         players[nPlayers] = msg.sender;
         deposits[msg.sender] = msg.value;
         nPlayers++;
+
+        if (nPlayers == N) {
+            isFull = true;
+        }
     }
     
     /**
