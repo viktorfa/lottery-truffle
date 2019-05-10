@@ -9,20 +9,20 @@ import {LotteryMatch} from "./LotteryMatch.sol";
 contract LotteryMaster {
     // TODO Need some way of checking whether enough players have joined by tStart
     
-    address[] players;  // All players who have made a deposit.
-    mapping(address => uint256) deposits;  // The value of deposits players have made.
+    address[] public players;  // All players who have made a deposit.
+    mapping(address => uint256) public deposits;  // The value of deposits players have made.
     
-    address owner;  // Owner of this contract.
+    address public owner;  // Owner of this contract.
     
-    uint256 price;  // Price in wei for buying a ticket.
-    uint256 N;  // Max number of players in the lottery.
+    uint256 public price;  // Price in wei for buying a ticket.
+    uint256 public N;  // Max number of players in the lottery.
     
-    uint256 nPlayers;  // Number of players currently joined.
+    uint256 public nPlayers;  // Number of players currently joined.
     
-    uint256 tStart;      // Start block height of the lottery.
-    uint256 tFinal;  // Block height when the lottery is over and withdrawals can be made.
+    uint256 public tStart;      // Start block height of the lottery.
+    uint256 public tFinal;  // Block height when the lottery is over and withdrawals can be made.
     
-    LotteryMatch finalMatch;  // Reference to the final match which decides the winner.
+    LotteryMatch public finalMatch;  // Reference to the final match which decides the winner.
     
     constructor(uint256 _N, uint256 _price, uint256 _tStart, uint256 _tFinal) public {
         require(_tStart < _tFinal, "Time limits invalid. Stop time is before start time.");
@@ -84,5 +84,12 @@ contract LotteryMaster {
     
     function getPlayer(uint256 index) public view returns (address player) {
         player = players[index];
+    }
+
+    /**
+     * The only way to get an array is to make a function to get it.
+     */
+    function getPlayers() public view returns (address[] memory _players) {
+        _players = players;
     }
 }

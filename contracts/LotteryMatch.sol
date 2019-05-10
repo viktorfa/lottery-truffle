@@ -9,26 +9,26 @@ import {LotteryMaster} from "./LotteryMaster.sol";
  **/
 contract LotteryMatch {
     
-    address alice;  // Player 1 of the match.
-    address bob;    // Player 2 of the match.
+    address public alice;  // Player 1 of the match.
+    address public bob;    // Player 2 of the match.
     
-    mapping(address => bytes32) commitments;  // Commitments alice and bob have made.
-    mapping(address => uint256) secrets;      // Secrets, which are preimages to the commitments, alice and bob have made.
+    mapping(address => bytes32) public commitments;  // Commitments alice and bob have made.
+    mapping(address => uint256) public secrets;      // Secrets, which are preimages to the commitments, alice and bob have made.
     
-    LotteryMatch left;   // One of the matches for qualifying to this match. A contract address.
-    LotteryMatch right;  // One of the matches for qualifying to this match. A contract address.
+    LotteryMatch public left;   // One of the matches for qualifying to this match. A contract address.
+    LotteryMatch public right;  // One of the matches for qualifying to this match. A contract address.
     
-    LotteryMaster lottery;  // The master lottery contract.
-    bool isFirstLevel;  // There is a difference between first level matches and matches one must qualify for.
-    uint256 index;  // Matches on the first level are indexed so that they map to specific players in the lottery;
+    LotteryMaster public lottery;  // The master lottery contract.
+    bool public isFirstLevel;  // There is a difference between first level matches and matches one must qualify for.
+    uint256 public index;  // Matches on the first level are indexed so that they map to specific players in the lottery;
     
-    uint256 tCommit;  // Block height after which making commitments is possible.
-    uint256 tReveal;  // Block height after which making reveals is possible. And commitments no longer possible.
-    uint256 tPlay;  // Block height after which deciding the winner is possible. And reveals no longer possible.
+    uint256 public tCommit;  // Block height after which making commitments is possible.
+    uint256 public tReveal;  // Block height after which making reveals is possible. And commitments no longer possible.
+    uint256 public tPlay;  // Block height after which deciding the winner is possible. And reveals no longer possible.
     
-    address owner;  // Owner of this contract.
+    address public owner;  // Owner of this contract.
 
-    bool isInitialized;
+    bool public isInitialized;
     
 
     constructor(uint256 _tCommit, uint256 _tReveal, uint256 _tPlay) public {
@@ -140,7 +140,7 @@ contract LotteryMatch {
         }
         
         // Both parties have revealed, let's toss the coin.
-        if (secrets[alice] ^ secrets[bob] % 2 == 0) {
+        if ((secrets[alice] ^ secrets[bob]) % 2 == 0) {
             return alice;
         } else {
             return bob;
@@ -153,5 +153,4 @@ contract LotteryMatch {
     function getRight() public view returns (LotteryMatch _right) {
         _right = right;
     }
-    
 }
