@@ -1,4 +1,4 @@
-const { getLotteryMatches } = require('./helpers');
+const { getLotteryMatches } = require('../lib/helpers');
 const LotteryMaster = artifacts.require('LotteryMaster');
 const LotteryMatch = artifacts.require('LotteryMatch');
 

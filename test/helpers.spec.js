@@ -1,4 +1,4 @@
-const { getLotteryMatches } = require('./helpers');
+const { getLotteryMatches } = require('../lib/helpers');
 
 describe('getLotteryMatches', () => {
   it('Should return an object', () => {

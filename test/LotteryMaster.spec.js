@@ -21,4 +21,10 @@ contract('LotteryMaster', async (accounts) => {
       assert.include(error.message, 'revert');
     }
   });
+
+  it('Should not be able to read a field of the contract', async () => {
+    const actual = await this.lottery.price();
+    assert.isOk(actual);
+    assert.equal(actual, price);
+  });
 });

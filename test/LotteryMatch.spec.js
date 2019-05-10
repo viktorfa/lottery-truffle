@@ -1,4 +1,4 @@
-const { getLotteryMatches, generatePlayer } = require('./helpers');
+const { getLotteryMatches, generatePlayer } = require('../lib/helpers');
 
 const LotteryMatch = artifacts.require('LotteryMatch');
 const LotteryMaster = artifacts.require('LotteryMaster');
@@ -105,6 +105,11 @@ contract('LotteryMatch', async (accounts) => {
     } catch (error) {
       assert.include(error.message, 'revert');
     }
+  });
+
+  it('Should not be able to get the left or right match', async () => {
+    const actual = await this.match.left();
+    assert.isOk(actual);
   });
 });
 
