@@ -1,4 +1,10 @@
-const { getLotteryMatches, generatePlayers } = require('../lib/helpers');
+const LotteryMaster = artifacts.require('LotteryMaster');
+
+const {
+  getLotteryMatches,
+  generatePlayers,
+  setUpLottery,
+} = require('../lib/helpers');
 
 describe('getLotteryMatches', () => {
   it('Should return an object', () => {
@@ -7,6 +13,31 @@ describe('getLotteryMatches', () => {
     const td = 2;
     const actual = getLotteryMatches(N, tCommit, td);
     assert.isObject(actual);
+  });
+});
+
+contract('setUpLottery', () => {
+  it('Should set up matches correctly', async () => {
+    const N = 8;
+    const price = 1000;
+    const tStart = 0;
+    const tFinal = 10;
+    const td = 2;
+
+    const lottery = await LotteryMaster.new(N, price, tStart, tFinal);
+
+    const matches = await setUpLottery(lottery, N, tStart, td);
+
+    assert.isOk(matches);
+    assert.isArray(matches);
+    assert.equal(matches.length, Math.floor(Math.log2(N)));
+
+    const totalMatches = matches.reduce(
+      (acc, matches) => acc + matches.length,
+      0
+    );
+
+    assert.equal(totalMatches, N - 1, 'Number of matches not correct');
   });
 });
 

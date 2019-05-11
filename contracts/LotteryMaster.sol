@@ -1,6 +1,6 @@
 pragma solidity >=0.5.0 <0.6.0;
 
-import {LotteryMatch} from "./LotteryMatch.sol";
+import {AbstractLotteryMatch} from "./AbstractLotteryMatch.sol";
 
 
 /**
@@ -22,7 +22,7 @@ contract LotteryMaster {
     uint256 public tStart;      // Start block height of the lottery.
     uint256 public tFinal;  // Block height when the lottery is over and withdrawals can be made.
     
-    LotteryMatch public finalMatch;  // Reference to the final match which decides the winner.
+    AbstractLotteryMatch public finalMatch;  // Reference to the final match which decides the winner.
 
     bool public isInitialized;  // Whether the lottery is ready to take deposits.
     bool public isFull;  //  Whether the lottery is full and ready to play.
@@ -43,9 +43,9 @@ contract LotteryMaster {
      * The lottery should not be able to start before this is set. 
      * It's up to participants to validate that this final match is the correct contract.
      */
-    function setFinalMatch(LotteryMatch _finalMatch) public {
+    function setFinalMatch(AbstractLotteryMatch _finalMatch) public {
         require(msg.sender == owner, "Only owner can set final match.");
-        require(finalMatch == LotteryMatch(0), "Final match is already set.");  // Make sure finalMatch is immutable once set.
+        require(finalMatch == AbstractLotteryMatch(0), "Final match is already set.");  // Make sure finalMatch is immutable once set.
         finalMatch = _finalMatch;
 
         isInitialized = true;
@@ -58,7 +58,7 @@ contract LotteryMaster {
      */
     function deposit() public payable {
         // FOR TESTING require(block.number < t0, "Too late to deposit now.");
-        require(finalMatch != LotteryMatch(0), "Final match not set. Lottery not initialized yet.");
+        require(finalMatch != AbstractLotteryMatch(0), "Final match not set. Lottery not initialized yet.");
         require(msg.value == price, "Transaction value is not equal to ticket price.");
         require(isFull == false, "Lottery is full");
         // FOR TESTING require(deposits[msg.sender] == 0, "Player has already deposited to this lottery.");
