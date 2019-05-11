@@ -38,6 +38,11 @@ contract('LotteryContract', (accounts) => {
       (acc, matches) => acc + matches.length,
       0
     );
+    for (const levelMatches of matches) {
+      for (const match of levelMatches) {
+        assert.isOk(match, `Match is not ok: ${match}`);
+      }
+    }
     assert.equal(totalMatches, N - 1, 'Number of matches not correct');
   });
 });

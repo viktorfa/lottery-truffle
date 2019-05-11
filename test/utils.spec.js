@@ -1,4 +1,4 @@
-const { range } = require('../lib/utils');
+const { range, generatePlayers } = require('../lib/utils');
 
 describe('range', () => {
   it('Should return an enumerated array of length n', () => {
