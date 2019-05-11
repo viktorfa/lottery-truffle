@@ -36,7 +36,6 @@ contract LotteryMaster {
         tFinal = _tFinal;
 
         owner = msg.sender;
-        players = new address[](_N);  // Initialize the list of player as an array of fixed size.
     }
     
     /**
@@ -64,7 +63,7 @@ contract LotteryMaster {
         require(isFull == false, "Lottery is full");
         // FOR TESTING require(deposits[msg.sender] == 0, "Player has already deposited to this lottery.");
         
-        players[nPlayers] = msg.sender;
+        players.push(msg.sender);
         deposits[msg.sender] = msg.value;
         nPlayers++;
 
