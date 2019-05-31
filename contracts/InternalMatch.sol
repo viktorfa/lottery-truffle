@@ -79,7 +79,7 @@ contract InternalMatch is AbstractLotteryMatch{
         } else if (alice == address(0) && bob != address(0)) {
             return bob;
         } else if (alice == address(0) && bob == address(0)) {
-            return address(0);
+            return left.getWinner();
         }
         
         // Check if parties have made commitments.
@@ -88,7 +88,7 @@ contract InternalMatch is AbstractLotteryMatch{
         } else if (commitments[alice] == 0 && commitments[bob] != 0) {
             return bob;
         } else if (commitments[alice] == 0 && commitments[bob] == 0) {
-            return address(0);
+            return left.getWinner();
         }
 
         // Check if parties have revealed.
@@ -97,7 +97,7 @@ contract InternalMatch is AbstractLotteryMatch{
         } else if (secrets[alice] == 0 && secrets[bob] != 0) {
             return bob;
         } else if (secrets[alice] == 0 && secrets[bob] == 0) {
-            return address(0);
+            return left.getWinner();
         }
         
         // Both parties have revealed, let's toss the coin.

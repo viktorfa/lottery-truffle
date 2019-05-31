@@ -20,20 +20,18 @@ contract LotteryMaster {
     uint256 public nPlayers;  // Number of players currently joined.
     
     uint256 public tStart;      // Start block height of the lottery.
-    uint256 public tFinal;  // Block height when the lottery is over and withdrawals can be made.
     
     AbstractLotteryMatch public finalMatch;  // Reference to the final match which decides the winner.
 
     bool public isInitialized;  // Whether the lottery is ready to take deposits.
     bool public isFull;  //  Whether the lottery is full and ready to play.
     
-    constructor(uint256 _N, uint256 _price, uint256 _tStart, uint256 _tFinal) public {
-        require(_tStart < _tFinal, "Time limits invalid. Stop time is before start time.");
-        
+    constructor(uint256 _N, uint256 _price, uint256 _tStart) public {
+        // FOR TESTING require(_tStart < block.number, "Time limits invalid start time is in the past.");
+
         N = _N;
         price = _price;
         tStart = _tStart;
-        tFinal = _tFinal;
 
         owner = msg.sender;
     }
@@ -57,7 +55,7 @@ contract LotteryMaster {
      * equivalent to buying a ticket.
      */
     function deposit() public payable {
-        // FOR TESTING require(block.number < t0, "Too late to deposit now.");
+        // FOR TESTING require(block.number < tStart, "Too late to deposit now.");
         require(finalMatch != AbstractLotteryMatch(0), "Final match not set. Lottery not initialized yet.");
         require(msg.value == price, "Transaction value is not equal to ticket price.");
         require(isFull == false, "Lottery is full");
@@ -78,15 +76,15 @@ contract LotteryMaster {
      * participants can withdraw their deposit.
      */
     function withdraw() public {
-        address lotteryWinner = finalMatch.getWinner();
-        if (lotteryWinner != address(0)) {
+
+        if (block.number >= tStart && !isFull) {
+            // Lottery did not get enough participants, so participants can withdraw their deposit.
+            msg.sender.transfer(deposits[msg.sender]);
+        } else {
             // The winner can withdraw their prize.
+            address lotteryWinner = finalMatch.getWinner();
             require(msg.sender == lotteryWinner, "Player is not winner of lottery.");
             msg.sender.transfer(address(this).balance);
-        } else {
-            // Lottery has concluded without a winner.
-            require(block.number > tFinal, "Lottery stop time is not reached.");
-            msg.sender.transfer(deposits[msg.sender]);
         }
     }
     
