@@ -3,11 +3,10 @@ const LotteryMaster = artifacts.require('LotteryMaster');
 const N = 32;
 const price = 1000;
 const t0 = 100;
-const tFinal = 200;
 
 contract('LotteryMaster', async (accounts) => {
   beforeEach(async () => {
-    this.lottery = await LotteryMaster.new(N, price, t0, tFinal);
+    this.lottery = await LotteryMaster.new(N, price, t0);
   });
   it('Should be able to deploy', async () => {
     assert.isOk(this.lottery);
@@ -22,7 +21,7 @@ contract('LotteryMaster', async (accounts) => {
     }
   });
 
-  it('Should not be able to read a field of the contract', async () => {
+  it('Should be able to read a field of the contract', async () => {
     const actual = await this.lottery.price();
     assert.isOk(actual);
     assert.equal(actual, price);

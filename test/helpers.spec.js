@@ -21,10 +21,9 @@ contract('setUpLottery', () => {
     const N = 8;
     const price = 1000;
     const tStart = 0;
-    const tFinal = 10;
     const td = 2;
 
-    const lottery = await LotteryMaster.new(N, price, tStart, tFinal);
+    const lottery = await LotteryMaster.new(N, price, tStart);
 
     const matches = await setUpLottery(lottery, N, tStart, td);
 

@@ -6,12 +6,11 @@ const N = 4;
 const L = Math.floor(Math.log2(N));
 const price = web3.utils.toWei('0.1', 'ether');
 const tStart = 0;
-const tFinal = 100;
 const td = 2;
 
 contract('LotteryContract', (accounts) => {
   beforeEach(async () => {
-    this.lottery = await LotteryMaster.new(N, price, tStart, tFinal);
+    this.lottery = await LotteryMaster.new(N, price, tStart);
     this.lotteryContract = new LotteryContract(this.lottery.address);
   });
   it('Should be able to initialize', async () => {
@@ -25,7 +24,7 @@ contract('LotteryContract', (accounts) => {
     assert.isOk(actual);
   });
   it('getAllMatches', async () => {
-    const lotteryBuilder = new LotteryBuilder(N, price, tStart, tFinal, td);
+    const lotteryBuilder = new LotteryBuilder(N, price, tStart, td);
     await lotteryBuilder.start();
     const lotteryContract = new LotteryContract(lotteryBuilder.lottery.address);
     await lotteryContract.init();

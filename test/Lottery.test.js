@@ -1,52 +1,19 @@
-const { getLotteryMatches } = require('../lib/helpers');
+const { getLotteryMatches, setUpLottery } = require('../lib/helpers');
 const LotteryMaster = artifacts.require('LotteryMaster');
-const LotteryMatch = artifacts.require('LotteryMatch');
+const LotteryMatch = artifacts.require('AbstractLotteryMatch');
 
 const N = 8;
 const price = 1000;
-const t0 = 100;
-const tFinal = 200;
+const tStart = 100;
 const td = 2;
 
 contract('Lottery integration test', async (accounts) => {
   beforeEach(async () => {
-    this.lottery = await LotteryMaster.new(N, price, t0, tFinal);
-    this.matchesParams = getLotteryMatches(N, t0, td);
+    this.lottery = await LotteryMaster.new(N, price, tStart);
+    this.matchesParams = getLotteryMatches(N, tStart, td);
 
-    this.matches = {};
+    this.matches = await setUpLottery(this.lottery, N, tStart, td);
 
-    for await (const [level, levelParams] of Object.entries(
-      this.matchesParams
-    )) {
-      this.matches[level] = {};
-      const promises = [];
-      for await (const [key, value] of Object.entries(levelParams)) {
-        const match = LotteryMatch.new(value.t0, value.t1, value.t2);
-        promises.push(match);
-        if (value.isFirstLevel) {
-          match.then((m) => {
-            promises.push(
-              m.initFirstLevelMatch(this.lottery.address, value.index)
-            );
-          });
-        } else {
-          const [leftLevel, leftMatch] = value.left;
-          const [rightLevel, rightMatch] = value.right;
-          match.then((m) => {
-            promises.push(
-              m.initInternalMatch(
-                this.matches[leftLevel][leftMatch].address,
-                this.matches[rightLevel][rightMatch].address
-              )
-            );
-          });
-        }
-        match.then((m) => {
-          this.matches[level][key] = m;
-        });
-      }
-      await Promise.all(promises);
-    }
     this.finalMatch = this.matches[Object.keys(this.matches).length - 1][0];
   });
 
@@ -60,6 +27,41 @@ contract('Lottery integration test', async (accounts) => {
       N - 1
     );
   });
+
+  it('Should have a winner even if nobody does anything as long as all players have joined', async () => {
+    await this.lottery.setFinalMatch(this.finalMatch.address);
+
+    const players = [];
+    const playerMap = {};
+    for (let i = 0; i < N; i++) {
+      const secret = web3.utils.randomHex(8);
+      const address = accounts[i];
+      const commitment = web3.utils.soliditySha3(address, {
+        type: 'uint',
+        value: secret,
+      });
+
+      const player = {
+        secret,
+        address,
+        commitment,
+      };
+      players.push(player);
+      playerMap[address] = player;
+      await this.lottery.deposit({ from: address, value: price });
+    }
+
+    const finalMatch = await LotteryMatch.at(await this.lottery.finalMatch());
+    const winner = await finalMatch.getWinner();
+
+    assert.isOk(winner);
+    assert.equal(
+      winner,
+      players[0].address,
+      'First player should be default winner'
+    );
+  });
+
   it('Should be able to play correctly', async () => {
     await this.lottery.setFinalMatch(this.finalMatch.address);
 

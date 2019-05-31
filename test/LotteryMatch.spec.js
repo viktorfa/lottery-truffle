@@ -1,16 +1,17 @@
-const { getLotteryMatches, generatePlayer } = require('../lib/helpers');
+const {
+  generatePlayer,
+  setUpLottery,
+} = require('../lib/helpers');
 const { MatchPhases } = require('../lib/enums');
 
-const LotteryMatch = artifacts.require('LotteryMatch');
+const FirstLevelMatch = artifacts.require('FirstLevelMatch');
+const InternalMatch = artifacts.require('InternalMatch');
 const LotteryMaster = artifacts.require('LotteryMaster');
 
 const N = 2;
 const price = 1000;
-const t0 = 100;
-const tFinal = 200;
+const tStart = 100;
 const td = 2;
-
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 const generateFirstLevelMatch = async (
   player1,
@@ -18,13 +19,11 @@ const generateFirstLevelMatch = async (
   lottery,
   phase = MatchPhases.PLAY
 ) => {
-  match = await LotteryMatch.new(1, 2, 3);
+  match = await FirstLevelMatch.new(1, 2, 3, lottery.address, 0);
   await lottery.setFinalMatch(match.address);
 
   lottery.deposit({ from: player1.address, value: price });
   lottery.deposit({ from: player2.address, value: price });
-
-  await match.initFirstLevelMatch(lottery.address, 0);
 
   if (phase === MatchPhases.COMMIT) return match;
 
@@ -39,61 +38,40 @@ const generateFirstLevelMatch = async (
   return match;
 };
 
-const generateLottery = async (lottery, N, t0 = 0, td = 2) => {
-  matchesParams = getLotteryMatches(N, t0, td);
-
-  matches = {};
-
-  for await (const [level, levelParams] of Object.entries(matchesParams)) {
-    matches[level] = {};
-    const promises = [];
-    for await (const [key, value] of Object.entries(levelParams)) {
-      const match = LotteryMatch.new(value.t0, value.t1, value.t2);
-      promises.push(match);
-      if (value.isFirstLevel) {
-        match.then((m) => {
-          promises.push(m.initFirstLevelMatch(lottery.address, value.index));
-        });
-      } else {
-        const [leftLevel, leftMatch] = value.left;
-        const [rightLevel, rightMatch] = value.right;
-        match.then((m) => {
-          promises.push(
-            m.initInternalMatch(
-              matches[leftLevel][leftMatch].address,
-              matches[rightLevel][rightMatch].address
-            )
-          );
-        });
-      }
-      match.then((m) => {
-        matches[level][key] = m;
-      });
-    }
-    await Promise.all(promises);
-  }
-
-  return matches;
-};
-
 contract('LotteryMatch', async (accounts) => {
   beforeEach(async () => {
-    this.match = await LotteryMatch.new(1, 2, 3);
+    this.lottery = await LotteryMaster.new(N, price, tStart);
+    this.player1 = generatePlayer({
+      secret: 0b001,
+      address: accounts[0],
+    });
+    this.player2 = generatePlayer({
+      secret: 0b111,
+      address: accounts[1],
+    });
+    this.match = await generateFirstLevelMatch(
+      this.player1,
+      this.player2,
+      this.lottery,
+      MatchPhases.COMMIT
+    );
   });
   it('Should be able to deploy', async () => {
     assert.isOk(this.match);
   });
 
-  it('Should not be able to commit when not initialized', async () => {
-    try {
-      await this.match.commit(web3.utils.fromAscii('abc'));
-      assert.fail();
-    } catch (error) {
-      assert.include(error.message, 'revert');
-    }
+  it('Should be able to commit', async () => {
+    const asciiCommitment = 'abc';
+    const commitment = web3.utils.fromAscii(asciiCommitment);
+    await this.match.commit(commitment, {
+      from: this.player1.address,
+    });
+    const actual = await this.match.commitments(this.player1.address);
+    // Actual is a hexstring with trailing zeroes, while the commitment has no trailing zeroes...
+    assert.equal(actual.substring(0, commitment.length), commitment);
   });
 
-  it('Should not be able to reveal when not initialized', async () => {
+  it('Should not be able to reveal when not made commitments', async () => {
     try {
       await this.match.reveal(123);
       assert.fail();
@@ -101,16 +79,11 @@ contract('LotteryMatch', async (accounts) => {
       assert.include(error.message, 'revert');
     }
   });
-
-  it('Should not be able to get the left or right match', async () => {
-    const actual = await this.match.left();
-    assert.isOk(actual);
-  });
 });
 
 contract('LotteryMatch play', async (accounts) => {
   beforeEach(async () => {
-    this.lottery = await LotteryMaster.new(N, price, t0, tFinal);
+    this.lottery = await LotteryMaster.new(N, price, tStart);
 
     this.player1 = generatePlayer({
       secret: 0b001,
@@ -165,7 +138,7 @@ contract('LotteryMatch play', async (accounts) => {
     assert.equal(expectedWinner, await match.getWinner());
   });
 
-  it('Should not determine the winner if neither party reveals', async () => {
+  it('Should determine the winner if neither party reveals', async () => {
     match = await generateFirstLevelMatch(
       this.player1,
       this.player2,
@@ -173,11 +146,11 @@ contract('LotteryMatch play', async (accounts) => {
       MatchPhases.REVEAL
     );
 
-    const expectedWinner = ZERO_ADDRESS;
+    const expectedWinner = this.player1.address;
     assert.equal(expectedWinner, await match.getWinner());
   });
 
-  it('Should not determine the winner if neither party commits', async () => {
+  it('Should determine the winner if neither party commits', async () => {
     match = await generateFirstLevelMatch(
       this.player1,
       this.player2,
@@ -185,14 +158,14 @@ contract('LotteryMatch play', async (accounts) => {
       MatchPhases.COMMIT
     );
 
-    const expectedWinner = ZERO_ADDRESS;
+    const expectedWinner = this.player1.address;
     assert.equal(expectedWinner, await match.getWinner());
   });
 
   it('Should determine the winner if one player is unassigned', async () => {
     const _N = 4;
-    const lottery = await LotteryMaster.new(_N, price, 0, 100);
-    const matches = await generateLottery(lottery, _N);
+    const lottery = await LotteryMaster.new(_N, price, tStart);
+    const matches = await setUpLottery(lottery, _N, tStart, td);
     await lottery.setFinalMatch(matches[1][0].address);
 
     const player1 = generatePlayer({ address: accounts[0], secret: 0b101 });
@@ -224,10 +197,10 @@ contract('LotteryMatch play', async (accounts) => {
     assert.equal(expectedWinner, await matches[1][0].getWinner());
   });
 
-  it('Should not determine the winner if both players are unassigned', async () => {
+  it('Should determine the winner if both players are unassigned', async () => {
     const _N = 4;
-    const lottery = await LotteryMaster.new(_N, price, 0, 100);
-    const matches = await generateLottery(lottery, _N);
+    const lottery = await LotteryMaster.new(_N, price, tStart);
+    const matches = await setUpLottery(lottery, _N, tStart, td);
     await lottery.setFinalMatch(matches[1][0].address);
 
     const player1 = generatePlayer({ address: accounts[0], secret: 0b101 });

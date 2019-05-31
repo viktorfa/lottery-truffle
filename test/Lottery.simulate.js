@@ -1,18 +1,16 @@
 const { LotteryBuilder, LotteryContract } = require('../lib/contracts');
 const { generatePlayers } = require('../lib/helpers');
-const { getMatchForPlayer } = require('../lib/utils');
 
-const N = 8;
 const price = web3.utils.toWei('1', 'ether');
 const tStart = 100;
-const tFinal = 200;
 const td = 2;
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 contract('Simulate lottery build', (accounts) => {
   it('Should build master contract and match contracts for n players', async () => {
-    const L = 2;
+
+    const L = 3;
     const N = 2 ** L;
 
     const organizerAddress = accounts[0];
@@ -25,7 +23,7 @@ contract('Simulate lottery build', (accounts) => {
 
     console.log(`Building lottery with ${N} players.`);
     const startTime = new Date();
-    const lotteryBuilder = new LotteryBuilder(N, price, tStart, tFinal, td);
+    const lotteryBuilder = new LotteryBuilder(N, price, tStart, td);
 
     const sub = web3.eth.subscribe('pendingTransactions');
 
@@ -51,14 +49,14 @@ contract('Simulate lottery build', (accounts) => {
 });
 contract('Simulate lottery play', (accounts) => {
   it('Should play correctly', async () => {
-    const L = 2;
+    const L = 3;
     const N = 2 ** L;
 
     console.log(`Simulating lottery with ${N} players.`);
     let startTime = new Date();
     let tempTime = new Date();
 
-    const lotteryBuilder = new LotteryBuilder(N, price, tStart, tFinal, td);
+    const lotteryBuilder = new LotteryBuilder(N, price, tStart, td);
     await lotteryBuilder.start();
 
     console.log(`Built lottery in ${new Date() - tempTime} ms`);
