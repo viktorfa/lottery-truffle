@@ -1,32 +1,30 @@
 pragma solidity >=0.5.0 <0.6.0;
 
-import {LotteryMaster} from "./LotteryMaster.sol";
-import {AbstractLotteryMatch} from "./AbstractLotteryMatch.sol";
-
+import { LotteryMaster } from "./LotteryMaster.sol";
+import { AbstractLotteryMatch } from "./AbstractLotteryMatch.sol";
 
 /**
- * Match as a digital coin toss between two players. 
+ * Match as a digital coin toss between two players.
  * A tournament is made from a tree of these matches.
  **/
 contract InternalMatch is AbstractLotteryMatch{
     
     address public alice;  // Player 1 of the match.
-    address public bob;    // Player 2 of the match.
+    address public bob;  // Player 2 of the match.
     
     mapping(address => bytes32) public commitments;  // Commitments alice and bob have made.
-    mapping(address => uint256) public secrets;      // Secrets, which are preimages to the commitments, alice and bob have made.
+    mapping(address => uint256) public secrets;  // Secrets, which are preimages to the commitments, alice and bob have made.
     
-    AbstractLotteryMatch public left;   // One of the matches for qualifying to this match. A contract address.
+    AbstractLotteryMatch public left;  // One of the matches for qualifying to this match. A contract address.
     AbstractLotteryMatch public right;  // One of the matches for qualifying to this match. A contract address.
     
     uint256 public tCommit;  // Block height after which making commitments is possible.
     uint256 public tReveal;  // Block height after which making reveals is possible. And commitments no longer possible.
     uint256 public tPlay;  // Block height after which deciding the winner is possible. And reveals no longer possible.
     
-
     constructor(uint256 _tCommit, uint256 _tReveal, uint256 _tPlay, AbstractLotteryMatch _left, AbstractLotteryMatch _right) public {
-        // FOR TESTING require(_tCommit < _tReveal);
-        // FOR TESTING require(_tReveal < _tPlay);
+        require(_tCommit < _tReveal, "Invalid time limits. tCommit not before tReveal.");
+        require(_tReveal < _tPlay, "Invalid time limits. tReveal not before tPlay.");
         
         tCommit = _tCommit;
         tReveal = _tReveal;
@@ -41,8 +39,8 @@ contract InternalMatch is AbstractLotteryMatch{
      * Have a player commit to a value for the ditial coin toss.
      */
     function commit(bytes32 _c) public {
-        // FOR TESTING require(tCommit < block.number);
-        // FOR TESTING require(tReveal > block.number);
+        require(tCommit < block.number, "Too early to commit.");
+        require(tReveal > block.number, "Too late to commit.");
         
         alice = left.getWinner();
         bob = right.getWinner();
@@ -56,8 +54,8 @@ contract InternalMatch is AbstractLotteryMatch{
      * Have a player reveal the value previously commited to for the digital coin toss.
      */
     function reveal(uint256 _s) public {
-        // FOR TESTING require(tReveal < block.number);
-        // FOR TESTING require(tPlay > block.number);
+        require(tReveal < block.number, "Too early to reveal.");
+        require(tPlay > block.number, "Too late to reveal.");
         
         require(keccak256(abi.encodePacked(msg.sender, _s)) == commitments[msg.sender], "Secret not preimage of commitment.");
         
@@ -68,10 +66,7 @@ contract InternalMatch is AbstractLotteryMatch{
      * Implicitly calculate the winner by performing the digital coin toss.
      */
     function getWinner() public view returns (address winner) {
-        // FOR TESTING require(tPlay < block.number);
-
-        // NOTE: Be careful of an adversary calling this function
-        // before a winner should be determined.
+        require(tPlay < block.number, "Too early to determine a winner.");
 
         // Check if any player is missing
         if (alice != address(0) && bob == address(0)) {

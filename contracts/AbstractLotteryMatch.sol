@@ -1,11 +1,11 @@
 pragma solidity >=0.5.0 <0.6.0;
 
-
 /**
  * Match as a digital coin toss between two players. 
  * A tournament is made from a tree of these matches.
  **/
 contract AbstractLotteryMatch {
+    
     /**
      * Have a player commit to a value for the digital coin toss.
      */
