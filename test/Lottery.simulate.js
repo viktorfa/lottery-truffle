@@ -9,14 +9,13 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 contract('Simulate lottery build', (accounts) => {
   it('Should build master contract and match contracts for n players', async () => {
-
     const L = 3;
     const N = 2 ** L;
 
     const organizerAddress = accounts[0];
     const organizerInitialBalance = web3.utils.fromWei(
       await web3.eth.getBalance(organizerAddress),
-      'ether'
+      'ether',
     );
 
     console.log(`Organizer has ${organizerInitialBalance} ether`);
@@ -36,17 +35,65 @@ contract('Simulate lottery build', (accounts) => {
 
     const organizerFinalBalance = web3.utils.fromWei(
       await web3.eth.getBalance(organizerAddress),
-      'ether'
+      'ether',
     );
 
     console.log(`Organizer has ${organizerFinalBalance} ether`);
     console.log(
       `Organizer used ${organizerInitialBalance -
-        organizerFinalBalance} ether for gas.`
+        organizerFinalBalance} ether for gas.`,
     );
     console.log('Gas price is by default 20 gwei.');
   });
 });
+
+contract('Simulate lottery play with no reveals or commits', (accounts) => {
+  it('Should play correctly', async () => {
+    const L = 3;
+    const N = 2 ** L;
+
+    console.log(`Simulating lottery with ${N} players.`);
+    let startTime = new Date();
+    let tempTime = new Date();
+
+    const lotteryBuilder = new LotteryBuilder(N, price, tStart, td);
+    await lotteryBuilder.start();
+
+    console.log(`Built lottery in ${new Date() - tempTime} ms`);
+    tempTime = new Date();
+
+    const lottery = new LotteryContract(lotteryBuilder.lottery.address);
+    await lottery.init();
+
+    console.log(
+      `Initialized lottery playing contract in ${new Date() - tempTime} ms`,
+    );
+    tempTime = new Date();
+
+    const players = generatePlayers(N, accounts);
+
+    for (const { address } of players) {
+      await lottery.deposit(address);
+    }
+
+    console.log(`All players joined in ${new Date() - tempTime} ms`);
+    tempTime = new Date();
+
+    const winner = await lottery.getWinner();
+    assert.notEqual(winner, ZERO_ADDRESS);
+    assert.equal(winner, players[0].address);
+
+    await lottery.lotteryContract.withdraw({ from: winner });
+
+    console.log(
+      `Winner is ${winner} who now has ${web3.utils.fromWei(
+        await web3.eth.getBalance(winner),
+        'ether',
+      )} eth`,
+    );
+  });
+});
+
 contract('Simulate lottery play', (accounts) => {
   it('Should play correctly', async () => {
     const L = 3;
@@ -66,7 +113,7 @@ contract('Simulate lottery play', (accounts) => {
     await lottery.init();
 
     console.log(
-      `Initialized lottery playing contract in ${new Date() - tempTime} ms`
+      `Initialized lottery playing contract in ${new Date() - tempTime} ms`,
     );
     tempTime = new Date();
 
@@ -78,7 +125,7 @@ contract('Simulate lottery play', (accounts) => {
     const players = generatePlayers(N, accounts);
     const playerMap = players.reduce(
       (acc, x) => ({ ...acc, [x.address]: x }),
-      {}
+      {},
     );
 
     for (const { address } of players) {
@@ -121,8 +168,8 @@ contract('Simulate lottery play', (accounts) => {
     console.log(
       `Winner is ${winner} who now has ${web3.utils.fromWei(
         await web3.eth.getBalance(winner),
-        'ether'
-      )} eth`
+        'ether',
+      )} eth`,
     );
   });
 });
